@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boston Scientific - Stock Shares Outstanding</title>
+    <script>
+        async function fetchData(cik) {
+            const url = `https://data.sec.gov/api/xbrl/companyconcept/CIK${cik}/dei/EntityCommonStockSharesOutstanding.json`;
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'YourAppName/1.0 (yourname@example.com)'
+                }
+            });
+            const data = await response.json();
+            return data;
+        }
+
+        function updatePage(data) {
+            const entityName = data.entityName;
+            const shares = data.units.shares.filter(entry => entry.fy > "2020" && !isNaN(entry.val));
+            const max = shares.reduce((prev, current) => (prev.val > current.val) ? prev : current);
+            const min = shares.reduce((prev, current) => (prev.val < current.val) ? prev : current);
+
+            document.getElementById('share-entity-name').textContent = entityName;
+            document.getElementById('share-max-value').textContent = max.val;
+            document.getElementById('share-max-fy').textContent = max.fy;
+            document.getElementById('share-min-value').textContent = min.val;
+            document.getElementById('share-min-fy').textContent = min.fy;
+            document.title = `${entityName} - Stock Shares Outstanding`;
+        }
+
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cik = urlParams.get('CIK') || '0000885725';
+            const data = await fetchData(cik);
+            updatePage(data);
+        }
+
+        window.onload = init;
+    </script>
+</head>
+<body>
+    <h1 id="share-entity-name">Boston Scientific</h1>
+    <div>
+        <h2>Maximum Shares Outstanding</h2>
+        <p>Value: <span id="share-max-value"></span></p>
+        <p>Fiscal Year: <span id="share-max-fy"></span></p>
+    </div>
+    <div>
+        <h2>Minimum Shares Outstanding</h2>
+        <p>Value: <span id="share-min-value"></span></p>
+        <p>Fiscal Year: <span id="share-min-fy"></span></p>
+    </div>
+</body>
+</html>
